@@ -158,10 +158,16 @@
 
   function renderHome(){
     const stages = GameLogic.getStages(state.characterData);
-    const stats = Object.fromEntries(stages.map(stage=>[stage.id, {
-      badges: GameLogic.getBadgeCountForStage(state.progress, state.characterData, stage.id),
-      open: GameLogic.isStageOpen(state.progress, state.characterData, stage.id)
-    }]));
+    const stats = Object.fromEntries(stages.map(stage=>{
+      const sp = GameLogic.getStageProgress(state.progress, state.characterData, stage.id);
+      return [stage.id, {
+        badges: sp ? sp.earned : 0,
+        open: GameLogic.isStageOpen(state.progress, state.characterData, stage.id),
+        remaining: sp ? sp.remaining : 0,
+        cleared: sp ? sp.cleared : false,
+        monsters: sp ? sp.monsters : []
+      }];
+    }));
     UI.renderHome({ progress:state.progress, levelInfo:getLevelInfo(), stages, stageStats:stats });
   }
 
