@@ -77,13 +77,36 @@
   }
   function packageToMathUnits(pkg){ return { schemaVersion:1, defaults:{questionCount:100,expectedAnswerSeconds:6,answerType:'numeric'}, monsterUnitMap:pkg.monsterUnitMap||{}, units:pkg.units }; }
   function download(obj, filename){ const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); }
-  async function readJsonFile(file){ return JSON.parse(await file.text()); }
+  function looksLikeHtml(text){
+    const head = String(text || '').trimStart().slice(0, 80).toLowerCase();
+    return head.startsWith('<!doctype') || head.startsWith('<html') || head.startsWith('<head') || head.startsWith('<body');
+  }
+  async function readJsonFile(file){
+    const name = String(file?.name || '').toLowerCase();
+    const text = await file.text();
+    if(looksLikeHtml(text)){
+      throw new Error(`${file.name || '選択ファイル'} はHTMLです。問題パッケージJSONではありません。index.htmlではなく .learning-pack.json または mathUnits.json を選択してください。`);
+    }
+    if(!(name.endsWith('.json') || name.endsWith('.learning-pack.json'))){
+      throw new Error(`${file.name || '選択ファイル'} は未対応形式です。.learning-pack.json または .json を選択してください。`);
+    }
+    try{
+      return JSON.parse(text);
+    }catch(e){
+      throw new Error(`JSONとして読み込めません: ${e.message}`);
+    }
+  }
   function renderPreview(){
     const root=$('preview');
     if(!state.package){ root.innerHTML='<div class="notice">問題パッケージはまだ読み込まれていません。</div>'; return; }
     root.innerHTML = `<div class="notice ok">${esc(state.package.title)} / ${state.package.units.length}単元</div>` + state.package.units.map(u=>`<div class="unit"><b>${esc(u.title)}</b><br><span class="muted">id:${esc(u.id)} / ${esc(u.answerType)} / 期待${Number(u.expectedAnswerSeconds)}秒</span>${(u.generator.questions||[]).slice(0,3).map(q=>`<div class="question">${esc((q.content||[]).map(c=>c.text||c.latex||c.alt||c.src||'').join(' / '))}</div>`).join('')}</div>`).join('');
   }
-  function applyFromText(){ const pkg=normalizePackage(JSON.parse($('package-json').value||'{}')); state.package=pkg; $('package-json').value=JSON.stringify(pkg,null,2); $('validation-result').className='notice ok'; $('validation-result').textContent='OK: 問題パッケージとして利用できます。'; renderPreview(); }
+  function parseJsonText(text, label){
+    if(looksLikeHtml(text)) throw new Error(`${label || '入力内容'} はHTMLです。問題パッケージJSONを貼り付けてください。`);
+    try{ return JSON.parse(text || '{}'); }
+    catch(e){ throw new Error(`JSONとして読み込めません: ${e.message}`); }
+  }
+  function applyFromText(){ const pkg=normalizePackage(parseJsonText($('package-json').value||'{}','JSON編集欄')); state.package=pkg; $('package-json').value=JSON.stringify(pkg,null,2); $('validation-result').className='notice ok'; $('validation-result').textContent='OK: 問題パッケージとして利用できます。'; renderPreview(); }
   function fillPrompt(){ $('gemini-prompt').value='小学3年生向けの算数問題を作ってください。単元は「時刻と時間」。スマホ1画面で読める短い問題にしてください。回答形式は四択。10問作ってください。'; }
   async function generateWithGemini(){
     const apiKey=$('gemini-api-key').value.trim(); const model=$('gemini-model').value.trim() || config.gemini?.defaultModel || 'gemini-2.5-flash'; const count=Number($('gemini-count').value||10); const answerType=$('gemini-answer-type').value; const prompt=$('gemini-prompt').value.trim();
@@ -95,7 +118,7 @@
       const body={contents:[{role:'user',parts:[{text:`${instruction}\n\n依頼内容:\n${prompt}`}]}],generationConfig:{responseMimeType:'application/json',responseSchema:schemaForGemini}};
       const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!res.ok) throw new Error(`Gemini API ${res.status}: ${await res.text()}`);
       const data=await res.json(); const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||''; if(!text) throw new Error('JSON本文を取得できませんでした');
-      const pkg=normalizePackage(JSON.parse(text)); state.package=pkg; $('package-json').value=JSON.stringify(pkg,null,2); renderPreview(); toast('生成しました');
+      const pkg=normalizePackage(parseJsonText(text,'Gemini応答')); state.package=pkg; $('package-json').value=JSON.stringify(pkg,null,2); renderPreview(); toast('生成しました');
     }catch(e){ toast(`生成失敗: ${e.message.slice(0,160)}`); }
     finally{ btn.disabled=false; btn.textContent='Geminiで生成'; }
   }
