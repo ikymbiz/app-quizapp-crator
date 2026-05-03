@@ -4,6 +4,20 @@
   const esc = value => String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const fmtTime = sec => `${Math.floor(sec/60).toString().padStart(2,'0')}:${Math.floor(sec%60).toString().padStart(2,'0')}`;
 
+  let labels = null;
+  function setLabels(value){ labels = value || null; }
+  function modeName(mode){
+    if(labels?.modes?.[mode]?.name) return labels.modes[mode].name;
+    if(mode === 'progression100') return 'バトル';
+    if(mode === 'practiceCount') return 'トレーニング';
+    if(mode === 'timeAttack') return 'タイムアタック';
+    if(mode === 'review') return 'ブートキャンプ';
+    return mode;
+  }
+  function modeSummary(mode){ return labels?.modes?.[mode]?.summary || ''; }
+  function modeCallout(mode){ return labels?.modes?.[mode]?.monsterCallout || ''; }
+  function screenLabel(section, key, fallback){ return labels?.screens?.[section]?.[key] ?? fallback ?? ''; }
+
   function activate(element, handler){
     if(!element || typeof handler !== 'function') return;
     // タップごとに pointerup（または touchend）→ ブラウザが合成 click を発火する流れになるため、
@@ -117,12 +131,8 @@
   }
 
   function renderStartSummary({ mode, stage, monster, unit, canProgress }){
-    const text = mode === 'progression100'
-      ? '100問モード：撃破するとバッジ獲得・ステージ進行あり'
-      : mode === 'practiceCount'
-        ? '問題数選択モード：賞金集め・練習用。バッジ進行なし'
-        : 'タイムアタック：賞金集め・記録挑戦用。バッジ進行なし';
-    $('start-summary').innerHTML = `<b>${esc(stage?.name || '')} / ${esc(monster?.name || '')}</b><br><span class="tiny muted">${esc(unit?.title || '')} / ${text}</span>${canProgress?'':'<br><span class="tiny danger">このモードではステージ進行しません</span>'}`;
+    const text = `${modeName(mode)}：${modeSummary(mode)}`;
+    $('start-summary').innerHTML = `<b>${esc(stage?.name || '')} / ${esc(monster?.name || '')}</b><br><span class="tiny muted">${esc(unit?.title || '')} / ${esc(text)}</span>${canProgress?'':'<br><span class="tiny danger">このモードではステージ進行しません</span>'}`;
   }
 
   function renderBattle(battle){
@@ -131,6 +141,8 @@
     $('battle-timer').textContent = battle.timeLimitSec ? `${fmtTime(Math.max(0,battle.timeLimitSec - battle.elapsedSec))}` : fmtTime(battle.elapsedSec || 0);
     $('battle-monster-icon').textContent = battle.monster?.sprite || '✨';
     $('battle-monster-name').textContent = battle.monster?.name || '';
+    const calloutEl = $('battle-monster-callout');
+    if(calloutEl) calloutEl.textContent = modeCallout(battle.mode) || '';
     $('battle-hp-text').textContent = `${Math.ceil(battle.hpCurrent).toLocaleString()} / ${battle.hpMax.toLocaleString()}`;
     $('battle-hp').style.width = `${Math.max(0, battle.hpCurrent / battle.hpMax * 100)}%`;
     $('battle-gauge').style.width = `${battle.powerGauge}%`;
@@ -194,10 +206,12 @@
   }
 
   function renderResult({ result, rewards, stars, rank, badgeEarned, stageCleared, correctLabels, onReview, onRetryMistakes }){
-    const title = result.mode === 'progression100' ? (result.victory ? 'VICTORY!' : 'ざんねん...') : 'RESULT';
+    const title = result.mode === 'progression100'
+      ? (result.victory ? screenLabel('result','victory','VICTORY!') : screenLabel('result','defeat','ざんねん...'))
+      : screenLabel('result','neutral','RESULT');
     $('result-main').innerHTML = `<section class="card result-hero">
-      <span class="pill">${esc(modeLabel(result.mode))}</span>
-      <div class="result-title">${title}</div>
+      <span class="pill">${esc(modeName(result.mode))}</span>
+      <div class="result-title">${esc(title)}</div>
       <p class="muted">${esc(result.monsterName || '')} ${result.victory ? 'クリア' : '未クリア'}</p>
       <div style="font-size:28px;letter-spacing:4px">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
       <div style="margin-top:8px"><span class="rank rank-${rank}">${rank}</span></div>
@@ -212,7 +226,7 @@
       <div class="badge-row"><span class="badge-token">XP +${rewards.xp}</span><span class="badge-token">賞金 +${rewards.coins}G</span>${badgeEarned ? `<span class="badge-token">${esc(badgeEarned.icon)} ${esc(badgeEarned.name)} 獲得</span>` : ''}${stageCleared ? '<span class="badge-token">🎉 ステージクリア</span>' : ''}</div>
     </section>
     <section class="card" id="mistakes-section"><h3 class="section-title">まちがえた問題</h3><div id="result-mistakes" class="mistake-list"></div></section>
-    <div class="grid-2"><button class="btn btn-mint" id="review-button">答えを見る</button><button class="btn btn-primary" id="retry-mistakes-button">間違いだけ再テスト</button></div>`;
+    <div class="grid-2"><button class="btn btn-mint" id="review-button">答えを見る</button><button class="btn btn-primary" id="retry-mistakes-button">${esc(screenLabel('review','retryButton','間違いだけ再テスト'))}</button></div>`;
     renderMistakes($('result-mistakes'), result.answers.filter(a=>!a.isCorrect), correctLabels);
     $('mistakes-section').classList.toggle('hidden', !result.answers.some(a=>!a.isCorrect));
     activate($('review-button'), onReview);
@@ -240,13 +254,7 @@
     }
     return value;
   }
-  function modeLabel(mode){
-    if(mode === 'progression100') return '100問モード';
-    if(mode === 'practiceCount') return '問題数選択';
-    if(mode === 'timeAttack') return 'タイムアタック';
-    if(mode === 'review') return '再テスト';
-    return mode;
-  }
+  function modeLabel(mode){ return modeName(mode); }
 
 
   function renderAnswerReview(result, correctLabelForQuestion, onRetryMistakes){
@@ -278,6 +286,7 @@
 
   global.UI = {
     $, esc, fmtTime, activate,
+    setLabels,
     setView,
     renderPlayer,
     renderHome,
@@ -293,6 +302,7 @@
     renderEncyclopedia,
     renderHistory,
     toast,
-    modeLabel
+    modeLabel,
+    modeName
   };
 })(window);
