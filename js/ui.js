@@ -6,19 +6,31 @@
 
   function activate(element, handler){
     if(!element || typeof handler !== 'function') return;
-    let last = 0;
-    const run = event => {
-      const now = Date.now();
-      if(now - last < 450) return;
-      last = now;
-      handler(event);
+    // タップごとに pointerup（または touchend）→ ブラウザが合成 click を発火する流れになるため、
+    // 直前の pointerup/touchend が処理した click だけを抑制する。
+    // 時間窓全体をブロックする方式だと、テンキーで「77」「99」のような同一キー連打ができないため、
+    // 「直近の pointerup/touchend が処理済みかどうか」のフラグだけで重複発火を防ぐ。
+    let suppressClick = false;
+    let suppressTimer = null;
+    const armSuppress = () => {
+      suppressClick = true;
+      if(suppressTimer) clearTimeout(suppressTimer);
+      suppressTimer = setTimeout(() => { suppressClick = false; suppressTimer = null; }, 600);
     };
     if(window.PointerEvent){
-      element.addEventListener('pointerup', run);
+      element.addEventListener('pointerup', event => { armSuppress(); handler(event); });
     }else{
-      element.addEventListener('touchend', event => { event.preventDefault(); run(event); }, { passive:false });
+      element.addEventListener('touchend', event => { event.preventDefault(); armSuppress(); handler(event); }, { passive:false });
     }
-    element.addEventListener('click', run);
+    element.addEventListener('click', event => {
+      if(suppressClick){
+        // 直前の pointerup/touchend が処理済み → 合成 click は捨てる
+        suppressClick = false;
+        if(suppressTimer){ clearTimeout(suppressTimer); suppressTimer = null; }
+        return;
+      }
+      handler(event);
+    });
   }
 
   function setView(view){
