@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "levels": [
+    { "level": 1, "requiredTotalXp": 0, "title": "みならい", "message": "ぼうけんのはじまり", "rewards": [] },
+    { "level": 2, "requiredTotalXp": 300, "title": "かけだし", "message": "計算のリズムが出てきた", "rewards": [{ "type": "coins", "amount": 50 }] },
+    { "level": 3, "requiredTotalXp": 800, "title": "れんしゅう上手", "message": "正解の力が育っている", "rewards": [{ "type": "coins", "amount": 100 }] },
+    { "level": 4, "requiredTotalXp": 1500, "title": "まほう使い", "message": "速く正確に答えられるようになってきた", "rewards": [{ "type": "coins", "amount": 150 }] },
+    { "level": 5, "requiredTotalXp": 2500, "title": "バトル名人", "message": "強いモンスターにも挑める力がある", "rewards": [{ "type": "coins", "amount": 250 }] },
+    { "level": 6, "requiredTotalXp": 4000, "title": "計算マスター", "message": "学習の積み重ねが力になっている", "rewards": [{ "type": "coins", "amount": 350 }] },
+    { "level": 7, "requiredTotalXp": 6000, "title": "星の勇者", "message": "むずかしい問題にも挑戦しよう", "rewards": [{ "type": "coins", "amount": 500 }] },
+    { "level": 8, "requiredTotalXp": 8500, "title": "伝説の学び手", "message": "すごい集中力", "rewards": [{ "type": "coins", "amount": 700 }] }
+  ]
+}
