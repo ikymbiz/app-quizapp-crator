@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>MathBattle Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><div class="brand-mark">✨</div><div>MathBattle<br><span class="tiny muted">学習ゲームテンプレート</span></div></div>
+      <div class="player-summary"><div id="player-level">Lv.1</div><span id="player-xp">0 XP / 0 G</span></div>
+    </div>
+  </header>
+
+  <div id="toast" class="notice hidden" style="position:fixed;z-index:100;left:50%;top:74px;transform:translateX(-50%);max-width:480px;width:calc(100% - 28px);text-align:center"></div>
+
+  <main class="app-shell">
+    <section id="home-view" class="view active stack">
+      <div class="card">
+        <p class="pill">ぼうけんの記録</p>
+        <h1 class="title" id="home-level-title">Level 1</h1>
+        <p class="muted" id="home-level-message">学習を続けよう</p>
+        <div class="progress-track"><div class="progress-fill" id="home-level-progress" style="width:0%"></div></div>
+        <div class="tiny muted" id="home-level-progress-text" style="margin-top:6px">0 / 0 XP</div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><b>賞金</b><div class="title" id="home-coins">0 G</div><p class="tiny muted">練習・タイムアタックで集めてステージをオープンできます。</p></div>
+        <button class="btn btn-primary" id="go-setup-button">⚔️ バトルへ</button>
+      </div>
+      <div class="stack" id="home-stage-list"></div>
+    </section>
+
+    <section id="setup-view" class="view stack">
+      <div class="card">
+        <h2 class="section-title">モード</h2>
+        <div class="grid-3">
+          <button class="btn btn-primary" data-mode-option="progression100">100問</button>
+          <button class="btn btn-mint" data-mode-option="practiceCount">問題数</button>
+          <button class="btn btn-mint" data-mode-option="timeAttack">タイム</button>
+        </div>
+        <div id="practice-config" class="hidden" style="margin-top:12px">
+          <label class="tiny muted">問題数</label>
+          <select id="practice-count" class="settings-input">
+            <option value="10">10問</option>
+            <option value="20" selected>20問</option>
+            <option value="50">50問</option>
+            <option value="100">100問</option>
+          </select>
+        </div>
+        <div id="time-config" class="hidden" style="margin-top:12px">
+          <label class="tiny muted">制限時間</label>
+          <select id="time-limit" class="settings-input">
+            <option value="30">30秒</option>
+            <option value="60" selected>60秒</option>
+            <option value="120">120秒</option>
+            <option value="300">300秒</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">ステージ</h2>
+        <div class="stack" id="stage-list"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">モンスター / 単元</h2>
+        <div class="stack" id="monster-list"></div>
+      </div>
+
+      <div class="notice" id="start-summary">選択してください</div>
+      <button class="btn btn-primary" id="start-button">開始</button>
+    </section>
+
+    <section id="battle-view" class="view">
+      <div class="battle-shell">
+        <div class="battle-header">
+          <div><small>しんちょく</small><span id="battle-progress">1/100</span></div>
+          <div><small>コンボ</small><span id="battle-combo">0 COMBO</span></div>
+          <div style="text-align:right"><small>タイム</small><span id="battle-timer">00:00</span></div>
+        </div>
+        <div class="battle-main">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b class="tiny">BOSS HP</b><span class="tiny muted" id="battle-hp-text">0/0</span></div>
+            <div class="hp-track"><div class="hp-fill" id="battle-hp" style="width:100%"></div></div>
+          </div>
+          <div class="monster-line"><div class="monster-big" id="battle-monster-icon">✨</div><div><b id="battle-monster-name">Monster</b><br><span class="tiny muted">100問以内にHPを0にしよう</span></div></div>
+          <div class="question-area" id="question-content"></div>
+        </div>
+        <div class="gauge-panel">
+          <div style="display:flex;justify-content:space-between"><b class="tiny">⚡ パワーゲージ</b><span class="tiny muted" id="battle-gauge-text">100%</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="battle-gauge" style="width:100%"></div></div>
+        </div>
+        <div class="answer-panel" id="answer-area"></div>
+      </div>
+    </section>
+
+    <section id="result-view" class="view stack">
+      <div id="result-main" class="stack"></div>
+      <div class="grid-2">
+        <button class="btn btn-primary" id="result-next-button">つぎへ</button>
+        <button class="btn" onclick="UI.setView('home'); App.state.battle=null;">ホーム</button>
+      </div>
+    </section>
+
+    <section id="review-view" class="view stack">
+      <div class="card">
+        <h2 class="section-title">答え・振り返り</h2>
+        <p class="tiny muted">間違った問題を確認し、再テストできます。</p>
+        <button class="btn btn-primary" id="start-review-button">間違いだけ再テスト</button>
+      </div>
+      <div class="stack" id="review-list"></div>
+    </section>
+
+    <section id="encyclopedia-view" class="view stack">
+      <div class="card"><h2 class="section-title">図鑑・バッジ</h2><p class="tiny muted">100問モードで撃破するとバッジが登録されます。</p></div>
+      <div class="stack" id="encyclopedia-list"></div>
+    </section>
+
+    <section id="history-view" class="view stack">
+      <div class="card"><h2 class="section-title">記録</h2><p class="tiny muted">バトル、練習、再テストの履歴です。</p></div>
+      <div class="stack" id="history-list"></div>
+    </section>
+
+    <section id="settings-view" class="view stack">
+      <div class="card stack">
+        <h2 class="section-title">データ管理</h2>
+        <button class="btn" id="export-progress">進捗をエクスポート</button>
+        <label class="btn btn-mint" for="import-progress-input">進捗をインポート</label>
+        <input id="import-progress-input" type="file" accept=".json,application/json" hidden>
+      </div>
+      <div class="card stack">
+        <h2 class="section-title">キャラクター定義</h2>
+        <p class="tiny muted">character.json を差し替えると、アプリ本体を編集せずにモンスターを追加できます。</p>
+        <label class="btn btn-mint" for="import-character-input">character.jsonをインポート</label>
+        <input id="import-character-input" type="file" accept=".json,application/json" hidden>
+        <button class="btn btn-rose" id="reset-character">初期character.jsonに戻す</button>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="nav-button active" data-view="home"><span>🏠</span>ホーム</button>
+      <button class="nav-button" data-view="setup"><span>⚔️</span>バトル</button>
+      <button class="nav-button" data-view="review"><span>📝</span>復習</button>
+      <button class="nav-button" data-view="encyclopedia"><span>📖</span>図鑑</button>
+      <button class="nav-button" data-view="history"><span>📊</span>記録</button>
+      <button class="nav-button" data-view="settings"><span>⚙️</span>設定</button>
+    </div>
+  </nav>
+
+  <script src="data/defaultData.js"></script>
+  <script src="js/gameLogic.js"></script>
+  <script src="js/questionLogic.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
