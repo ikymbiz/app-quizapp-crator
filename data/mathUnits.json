@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "defaults": {
+    "questionCount": 100,
+    "expectedAnswerSeconds": 6,
+    "answerType": "numeric"
+  },
+  "monsterUnitMap": {
+    "koropokkuru": "add_1_digit",
+    "pixie": "sub_1_digit",
+    "selkie": "add_2_digit",
+    "yuki_onna": "sub_2_digit",
+    "chupacabra": "mixed_2_digit_choice",
+    "nine_tail_fox": "mul_2_digit",
+    "sphinx": "math_terms_text",
+    "phoenix": "mixed_3_digit",
+    "unicorn": "mixed_4_digit"
+  },
+  "units": [
+    {
+      "id": "add_1_digit",
+      "title": "1けたのたし算",
+      "description": "1〜9のたし算をすばやく解く",
+      "expectedAnswerSeconds": 5,
+      "answerType": "numeric",
+      "contentTypes": ["formula"],
+      "generator": { "kind": "arithmetic", "operations": ["+"], "operandRange": [1, 9] }
+    },
+    {
+      "id": "sub_1_digit",
+      "title": "1けたのひき算",
+      "description": "答えが0以上になる1けたのひき算",
+      "expectedAnswerSeconds": 5,
+      "answerType": "numeric",
+      "contentTypes": ["formula"],
+      "generator": { "kind": "arithmetic", "operations": ["-"], "operandRange": [1, 9], "nonNegative": true }
+    },
+    {
+      "id": "add_2_digit",
+      "title": "2けたのたし算",
+      "description": "10〜99のたし算",
+      "expectedAnswerSeconds": 7,
+      "answerType": "numeric",
+      "contentTypes": ["formula"],
+      "generator": { "kind": "arithmetic", "operations": ["+"], "operandRange": [10, 99] }
+    },
+    {
+      "id": "sub_2_digit",
+      "title": "2けたのひき算",
+      "description": "10〜99のひき算",
+      "expectedAnswerSeconds": 7,
+      "answerType": "numeric",
+      "contentTypes": ["formula"],
+      "generator": { "kind": "arithmetic", "operations": ["-"], "operandRange": [10, 99], "nonNegative": true }
+    },
+    {
+      "id": "mixed_2_digit_choice",
+      "title": "2けたの計算 四択",
+      "description": "2けたのたし算・ひき算を四択で解く",
+      "expectedAnswerSeconds": 6,
+      "answerType": "choice",
+      "contentTypes": ["formula"],
+      "generator": { "kind": "arithmetic", "operations": ["+", "-"], "operandRange": [10, 99], "nonNegative": true, "choiceCount": 4 }
+    },
+    {
+      "id": "mul_2_digit",
+      "title": "かけ算",
+      "description": "2けたまでのかけ算",
+      "expectedAnswerSeconds": 8,
+      "answerType": "numeric",
+      "contentTypes": ["formula"],
+      "generator": { "kind": "arithmetic", "operations": ["*"], "operandRange": [2, 19] }
+    },
+    {
+      "id": "math_terms_text",
+      "title": "算数ことば",
+      "description": "単位や算数用語を文字で答える",
+      "expectedAnswerSeconds": 10,
+      "answerType": "text",
+      "contentTypes": ["text"],
+      "generator": {
+        "kind": "static",
+        "questions": [
+          {
+            "content": [{ "type": "text", "text": "長さの単位 cm は何と読む？" }],
+            "response": { "type": "text", "answers": ["センチメートル", "せんちめーとる", "centimeter", "centimetre"] }
+          },
+          {
+            "content": [{ "type": "text", "text": "重さの単位 kg は何と読む？" }],
+            "response": { "type": "text", "answers": ["キログラム", "きろぐらむ", "kilogram"] }
+          },
+          {
+            "content": [{ "type": "text", "text": "時間の単位 min は何を表す？" }],
+            "response": { "type": "text", "answers": ["分", "ふん", "ぷん", "minute", "minutes"] }
+          }
+        ]
+      }
+    },
+    {
+      "id": "mixed_3_digit",
+      "title": "3けたまでの総合計算",
+      "description": "たし算・ひき算・かけ算の総合練習",
+      "expectedAnswerSeconds": 9,
+      "answerType": "numeric",
+      "contentTypes": ["formula"],
+      "generator": { "kind": "arithmetic", "operations": ["+", "-", "*"], "operandRange": [10, 999], "nonNegative": true }
+    },
+    {
+      "id": "mixed_4_digit",
+      "title": "大きな数の総合計算",
+      "description": "大きな数を使った総合練習",
+      "expectedAnswerSeconds": 12,
+      "answerType": "numeric",
+      "contentTypes": ["formula"],
+      "generator": { "kind": "arithmetic", "operations": ["+", "-"], "operandRange": [100, 9999], "nonNegative": true }
+    }
+  ]
+}
