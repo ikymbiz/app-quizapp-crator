@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <title>MathBattle Template</title>
+  <title>MathBattle</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -104,7 +104,7 @@
       <div id="result-main" class="stack"></div>
       <div class="grid-2">
         <button class="btn btn-primary" id="result-next-button">つぎへ</button>
-        <button class="btn" onclick="UI.setView('home'); App.state.battle=null;">ホーム</button>
+        <button class="btn" id="result-home-button">ホーム</button>
       </div>
     </section>
 
@@ -133,13 +133,6 @@
         <button class="btn" id="export-progress">進捗をエクスポート</button>
         <label class="btn btn-mint" for="import-progress-input">進捗をインポート</label>
         <input id="import-progress-input" type="file" accept=".json,application/json" hidden>
-      </div>
-      <div class="card stack">
-        <h2 class="section-title">キャラクター定義</h2>
-        <p class="tiny muted">character.json を差し替えると、アプリ本体を編集せずにモンスターを追加できます。</p>
-        <label class="btn btn-mint" for="import-character-input">character.jsonをインポート</label>
-        <input id="import-character-input" type="file" accept=".json,application/json" hidden>
-        <button class="btn btn-rose" id="reset-character">初期character.jsonに戻す</button>
       </div>
     </section>
 
