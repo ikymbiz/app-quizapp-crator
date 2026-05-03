@@ -212,3 +212,82 @@ JSONとして読み込むべき処理に、HTMLファイル（例：`problem-mak
   すぐに別モードで「開始」をタップするケースで、
   以前のデバウンスが「開始」を拾えず古いバトル状態が残ってしまうことがあった。
 - 今回の修正でこのケースも正常に新規バトルが起動するようになった。
+
+## 2026-05-03 追加: 全画面が連続表示される問題
+
+### 症状
+
+ホーム / プレイ / 図鑑 / 記録 / 設定 などの画面が、
+切り替わらずに縦にすべて並んで表示されてしまう。
+
+### 原因
+
+CSS の詳細度衝突。
+
+`.view{display:none}` と `.stack{display:grid}` が同じ詳細度（class 1個）で、
+CSS 上の記述順は `.view` の方が先。
+そのため `class="view stack"` の要素は、後に書かれた `.stack` の `display:grid` が勝ち、
+非アクティブでも常に表示されていた。
+
+`.view.active` は詳細度2のためアクティブ画面はちゃんと表示されていたが、
+非アクティブ画面が消えていなかった。
+
+### 対応
+
+`css/styles.css` に以下の行を追加して、非アクティブの view を強制非表示にした。
+
+```css
+.view:not(.active){display:none!important}
+```
+
+`:not(.active)` で詳細度2、さらに `!important` で `.stack` の `display:grid` に確実に勝つ。
+
+jsdom で computed style を確認し、active な view 1枚だけが `display:block` 等で表示され、
+それ以外は全て `display:none` になることを確認した。
+
+## 2026-05-03 追加: 表示テキストの外部化（labels.json）
+
+### 背景
+
+「百問」→「バトル」、「問題数」→「トレーニング」、「再テスト」→「ブートキャンプ」、
+「タイムアタック」は据え置き、という改名要件が出た。
+今後も同種の文言調整が発生する想定のため、コードを変えずに表示文言だけ
+差し替えられるようファイル化する方針となった。
+
+### 対応
+
+- `data/labels.json` を新設。`modes` / `nav` / `screens` の3カテゴリで定義。
+  - `modes`：モードごとの表示名・短縮名・サマリー・モンスター下のキャッチ。
+    内部ID（`progression100` / `practiceCount` / `timeAttack` / `review`）は据え置き。
+  - `nav`：下部ナビのアイコンとラベル。
+  - `screens`：図鑑・ブートキャンプ画面のヘッダ、結果画面のVICTORY/敗北表示など。
+- `data/defaultData.js` に `window.DEFAULT_LABELS` フォールバックを追加。
+- `js/app.js` 起動時に `data/labels.json` を読み込み、
+  `applyStaticLabels()` で HTML 上のモード選択ボタン・下部ナビ・図鑑/ブートキャンプ
+  画面のヘッダを上書きする。
+- `js/ui.js` に `setLabels` / `modeName` / `modeSummary` / `modeCallout` を追加。
+  `renderStartSummary` / `renderBattle` / `renderResult` / `modeLabel` から参照する。
+- バトル画面のモンスター下キャッチ文（旧「100問以内にHPを0にしよう」）は
+  ID `battle-monster-callout` を持たせ、バトル毎にそのモードの `monsterCallout` を入れる。
+- 画面の構造（HTMLのレイアウト・section分割・スクリプト読み込み）は変更していない。
+
+### 確定した命名
+
+| 内部ID | 表示名 | モンスター下のキャッチ |
+| --- | --- | --- |
+| progression100 | バトル | モンスターを倒せ！100問バトル！ |
+| practiceCount | トレーニング | トレーニング中 |
+| timeAttack | タイムアタック | タイムアタック！ |
+| review | ブートキャンプ | ブートキャンプ |
+
+下部ナビ：
+- 旧「⚔️ バトル」（モード選択画面への入口）→「⚔️ プレイ」
+- 旧「📝 復習」→「📝 ブートキャンプ」
+- 他は据え置き。
+
+### 注意
+
+- 内部IDは変更していないため、既存の保存進捗（`progress.history` など）に
+  `progression100` 等が入っていても、再読込時に表示名は `labels.json` から
+  解決される。マイグレーションは不要。
+- `data/labels.json` を編集すれば、コードを変えずにこれらの文言を差し替えられる。
