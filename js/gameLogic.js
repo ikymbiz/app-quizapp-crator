@@ -126,8 +126,11 @@
 
   function calculateDamage({ battle, question, answerTimeSec }){
     const expected = Number(question.expectedAnswerSeconds || 6);
-    const speedMultiplier = clamp(expected / Math.max(0.35, answerTimeSec), 0.35, 2.4);
-    const comboMultiplier = 1 + Math.min((battle.combo || 0) * 0.04, 0.7);
+    // バランス調整: 速度倍率の上限を 2.4 → 1.6 に下げて、達人プレイで25問程度で終わってしまう問題を緩和。
+    // カジュアルプレイの勝率は維持したいので base ダメージは触らず、速度ボーナスのみ抑制する。
+    const speedMultiplier = clamp(expected / Math.max(0.35, answerTimeSec), 0.35, 1.6);
+    // バランス調整: コンボ倍率の上限も 0.7 → 0.5 に下げる
+    const comboMultiplier = 1 + Math.min((battle.combo || 0) * 0.04, 0.5);
     const gaugeMultiplier = clamp((battle.powerGauge || 0) / 100, 0.25, 1.15);
     const defenseFactor = Math.max(0.35, 1 - Number(battle.monster?.defense || 0) / 100);
     const targetCorrectRate = clamp(Number(battle.monster?.targetCorrectRate || 0.85), 0.55, 0.98);
@@ -278,14 +281,21 @@
       }
     }
 
-    const prev = p.records[monster.id] || { plays:0, stars:0, bestAccuracy:0, bestAvgSpeed:null, bestRank:'D' };
+    const prev = p.records[monster.id] || { plays:0, stars:0, bestAccuracy:0, bestAvgSpeed:null, bestRank:'D', bestDamageRatio:0, progressionAttempts:0 };
     const betterSpeed = result.avgSpeed && (!prev.bestAvgSpeed || result.avgSpeed < prev.bestAvgSpeed);
+    // 100問モードでHPをどれだけ削れたかを記録（バッジ獲得までの進捗表示に使う）
+    const isProgression = result.mode === MODES.PROGRESSION_100;
+    const damageRatio = isProgression && result.hpMax > 0
+      ? Math.max(0, Math.min(1, (result.hpMax - result.hpRemaining) / result.hpMax))
+      : 0;
     p.records[monster.id] = {
       plays: (prev.plays || 0) + 1,
       stars: Math.max(prev.stars || 0, stars),
       bestAccuracy: Math.max(prev.bestAccuracy || 0, result.accuracy),
       bestAvgSpeed: betterSpeed ? result.avgSpeed : prev.bestAvgSpeed,
       bestRank: betterRank(prev.bestRank, rank),
+      bestDamageRatio: isProgression ? Math.max(prev.bestDamageRatio || 0, damageRatio) : (prev.bestDamageRatio || 0),
+      progressionAttempts: (prev.progressionAttempts || 0) + (isProgression ? 1 : 0),
       lastPlayedAt: result.date
     };
 
@@ -334,6 +344,43 @@
     return (p.reviewBank || []).slice(0, limit || 20).map(item=>deepClone(item.question));
   }
 
+  // モンスターごとの「ゲットまでの進捗」を返す。stage/home画面の表示用。
+  // status: 'defeated' / 'attempted' / 'untried'
+  // bestDamagePct: 0-100（最高でHPの何%を削ったか）
+  // estimateTries: あと何回チャレンジで撃破できそうか（参考値）
+  function getMonsterProgress(progress, monster){
+    const p = ensureProgress(progress);
+    const badgeId = monster?.badge?.id;
+    const defeated = badgeId ? Boolean(p.badges[badgeId]) : Boolean(p.defeated[monster?.id]);
+    const rec = (p.records || {})[monster?.id] || {};
+    const attempts = Number(rec.progressionAttempts || 0);
+    const bestRatio = Number(rec.bestDamageRatio || 0);
+    const bestDamagePct = Math.round(bestRatio * 100);
+    let status = 'untried';
+    let estimateTries = null;
+    if(defeated){ status = 'defeated'; }
+    else if(attempts > 0){
+      status = 'attempted';
+      // 既存のベストでHP何%削れているかから、あと何回くらいで撃破できそうか推定
+      // bestRatioが高いほど少回数、低いほど多回数。最低1、上限は安全のため99で切る。
+      if(bestRatio >= 0.999) estimateTries = 1;
+      else if(bestRatio > 0) estimateTries = Math.min(99, Math.max(1, Math.ceil(1 / bestRatio)));
+    }
+    return { status, defeated, bestDamagePct, attempts, estimateTries };
+  }
+
+  // ステージ単位での進捗集計
+  function getStageProgress(progress, characterData, stageId){
+    const stage = getStage(characterData, stageId);
+    if(!stage) return null;
+    const monsters = getMonstersByStage(characterData, stageId);
+    const items = monsters.map(m => Object.assign({ monster: m }, getMonsterProgress(progress, m)));
+    const earned = getBadgeCountForStage(progress, characterData, stageId);
+    const remaining = Math.max(0, stage.requiredBadges - earned);
+    const cleared = remaining === 0;
+    return { stage, monsters: items, earned, remaining, cleared, requiredBadges: stage.requiredBadges };
+  }
+
   global.GameLogic = {
     MODES,
     defaultProgress,
@@ -358,6 +405,8 @@
     calculateRewards,
     applyBattleResult,
     getLevelInfo,
-    getReviewQuestions
+    getReviewQuestions,
+    getMonsterProgress,
+    getStageProgress
   };
 })(window);
