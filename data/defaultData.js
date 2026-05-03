@@ -480,6 +480,30 @@ window.DEFAULT_MATH_UNITS = {
   ]
 };
 
+window.DEFAULT_LABELS = {
+  "schemaVersion": 1,
+  "modes": {
+    "progression100": { "name": "バトル", "shortName": "バトル", "summary": "撃破するとバッジ獲得・ステージ進行あり", "monsterCallout": "モンスターを倒せ！100問バトル！" },
+    "practiceCount":  { "name": "トレーニング", "shortName": "トレーニング", "summary": "賞金集め・練習用。バッジ進行なし", "monsterCallout": "トレーニング中" },
+    "timeAttack":     { "name": "タイムアタック", "shortName": "タイム", "summary": "賞金集め・記録挑戦用。バッジ進行なし", "monsterCallout": "タイムアタック！" },
+    "review":         { "name": "ブートキャンプ", "shortName": "ブートキャンプ", "summary": "間違いだけ集中して直す", "monsterCallout": "ブートキャンプ" }
+  },
+  "nav": {
+    "home":         { "icon": "🏠", "label": "ホーム" },
+    "setup":        { "icon": "⚔️", "label": "プレイ" },
+    "review":       { "icon": "📝", "label": "ブートキャンプ" },
+    "encyclopedia": { "icon": "📖", "label": "図鑑" },
+    "history":      { "icon": "📊", "label": "記録" },
+    "settings":     { "icon": "⚙️", "label": "設定" }
+  },
+  "screens": {
+    "encyclopedia": { "title": "図鑑・バッジ", "subtitle": "バトルで撃破するとバッジが登録されます。" },
+    "review":       { "title": "答え・振り返り", "subtitle": "間違った問題を確認し、再テストできます。", "retryButton": "間違いだけ再テスト" },
+    "result":       { "victory": "VICTORY!", "defeat": "ざんねん...", "neutral": "RESULT" },
+    "battle":       { "progressLabel": "しんちょく", "comboLabel": "コンボ", "timerLabel": "タイム", "bossHpLabel": "BOSS HP", "powerGaugeLabel": "⚡ パワーゲージ" }
+  }
+};
+
 window.DEFAULT_LEVEL_DATA = {
   "schemaVersion": 1,
   "levels": [
