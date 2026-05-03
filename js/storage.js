@@ -46,17 +46,26 @@
       req.onerror = () => reject(req.error);
     });
   }
+  let memoryProgress = null;
+  function safeLocalGet(key){
+    try{return localStorage.getItem(key);}
+    catch(e){return null;}
+  }
+  function safeLocalSet(key,value){
+    try{ localStorage.setItem(key,value); return true; }
+    catch(e){ return false; }
+  }
   async function loadProgress(){
     try{return GameLogic.ensureProgress(await get(PROGRESS_KEY));}
     catch(e){
-      const raw = localStorage.getItem('mathbattle.progress');
-      return GameLogic.ensureProgress(raw ? JSON.parse(raw) : null);
+      const raw = safeLocalGet('mathbattle.progress');
+      return GameLogic.ensureProgress(raw ? JSON.parse(raw) : memoryProgress);
     }
   }
   async function saveProgress(progress){
     const safe = GameLogic.ensureProgress(progress);
     try{ await set(PROGRESS_KEY, safe); }
-    catch(e){ localStorage.setItem('mathbattle.progress', JSON.stringify(safe)); }
+    catch(e){ if(!safeLocalSet('mathbattle.progress', JSON.stringify(safe))) memoryProgress = safe; }
     return safe;
   }
   async function loadCustomCharacterData(){
