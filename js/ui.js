@@ -68,11 +68,31 @@
     $('home-coins').textContent = `${progress.coins.toLocaleString()} G`;
     $('home-stage-list').innerHTML = stages.map(stage=>{
       const stat = stageStats[stage.id];
+      const remaining = Math.max(0, (stage.requiredBadges || 0) - (stat.badges || 0));
+      const clearMsg = stat.cleared
+        ? '<span class="badge-token">🎉 ステージクリア！</span>'
+        : `<span class="badge-token">あと <b>${remaining}匹</b> 倒すとクリア！</span>`;
+      const openMsg = stat.open ? 'オープン中' : `未オープン（${stage.openCost}G）`;
+      const monstersLine = (stat.monsters || []).map(m => {
+        const sprite = esc(m.monster.sprite || '✨');
+        const name = esc(m.monster.name || '');
+        if(m.status === 'defeated') return `<span class="badge-token">${sprite} ${name} <b>ゲット済み</b></span>`;
+        if(m.status === 'attempted'){
+          const tries = m.estimateTries;
+          const triesText = tries === 1
+            ? '<b>あと一歩で撃破！</b>'
+            : `<b>あと約 ${tries} 回で撃破できそう</b>`;
+          return `<span class="badge-token">${sprite} ${name} ベスト${m.bestDamagePct}% / ${triesText}</span>`;
+        }
+        return `<span class="badge-token" style="opacity:.6">${sprite} ${name} 未挑戦</span>`;
+      }).join('');
       return `<div class="card">
         <div class="stage-head"><div class="stage-icon">${esc(stage.icon)}</div><div>
-          <b>${esc(stage.name)}</b><br><span class="tiny muted">バッジ ${stat.badges}/${stage.requiredBadges} ・ ${stat.open ? 'オープン中' : `未オープン（${stage.openCost}G）`}</span>
+          <b>${esc(stage.name)}</b><br><span class="tiny muted">バッジ ${stat.badges}/${stage.requiredBadges} ・ ${esc(openMsg)}</span>
         </div></div>
-        <div class="progress-track" style="margin-top:10px"><div class="progress-fill" style="width:${Math.min(100, stat.badges/stage.requiredBadges*100)}%"></div></div>
+        <div class="progress-track" style="margin-top:10px"><div class="progress-fill" style="width:${Math.min(100, (stat.badges/(stage.requiredBadges||1))*100)}%"></div></div>
+        <div class="badge-row" style="margin-top:8px">${clearMsg}</div>
+        <div class="badge-row" style="margin-top:6px;flex-wrap:wrap">${monstersLine}</div>
       </div>`;
     }).join('');
   }
