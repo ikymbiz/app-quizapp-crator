@@ -5,6 +5,7 @@
     characterData: null,
     mathUnits: null,
     levelData: null,
+    labels: null,
     progress: null,
     selectedStageId: null,
     selectedMonsterId: null,
@@ -26,21 +27,76 @@
   }
 
   async function init(){
-    const [characters, units, levels, progress, customMathUnits] = await Promise.all([
+    const [characters, units, levels, labels, progress, customMathUnits] = await Promise.all([
       loadJson('data/character.json', window.DEFAULT_CHARACTER_DATA),
       loadJson('data/mathUnits.json', window.DEFAULT_MATH_UNITS),
       loadJson('data/level.json', window.DEFAULT_LEVEL_DATA),
+      loadJson('data/labels.json', window.DEFAULT_LABELS),
       Storage.loadProgress(),
       Storage.loadCustomMathUnits()
     ]);
     state.characterData = normalizeCharacterData(characters);
     state.mathUnits = customMathUnits || units;
     state.levelData = levels;
+    state.labels = normalizeLabels(labels);
     state.progress = progress;
+    UI.setLabels(state.labels);
+    applyStaticLabels(state.labels);
     ensureInitialSelection();
     bindEvents();
     renderAll();
     UI.setView('home');
+  }
+
+  function normalizeLabels(labels){
+    const fallback = window.DEFAULT_LABELS || {};
+    const safe = labels && typeof labels === 'object' ? labels : {};
+    return {
+      modes:   Object.assign({}, fallback.modes,   safe.modes   || {}),
+      nav:     Object.assign({}, fallback.nav,     safe.nav     || {}),
+      screens: Object.assign({}, fallback.screens, safe.screens || {})
+    };
+  }
+
+  function applyStaticLabels(labels){
+    // モード切替ボタンの表示テキスト
+    document.querySelectorAll('[data-mode-option]').forEach(btn=>{
+      const id = btn.dataset.modeOption;
+      const m = labels.modes?.[id];
+      if(m) btn.textContent = m.shortName || m.name || btn.textContent;
+    });
+    // 下部ナビ
+    document.querySelectorAll('.nav-button').forEach(btn=>{
+      const view = btn.dataset.view;
+      const n = labels.nav?.[view];
+      if(n){
+        btn.innerHTML = `<span>${UI.esc(n.icon || '')}</span>${UI.esc(n.label || '')}`;
+      }
+    });
+    // 図鑑画面のヘッダ
+    const enc = labels.screens?.encyclopedia;
+    if(enc){
+      const card = document.querySelector('#encyclopedia-view .card');
+      if(card){
+        const title = card.querySelector('.section-title');
+        const sub = card.querySelector('p.tiny.muted');
+        if(title && enc.title) title.textContent = enc.title;
+        if(sub && enc.subtitle) sub.textContent = enc.subtitle;
+      }
+    }
+    // ブートキャンプ（旧復習）画面のヘッダとボタン
+    const rv = labels.screens?.review;
+    if(rv){
+      const card = document.querySelector('#review-view .card');
+      if(card){
+        const title = card.querySelector('.section-title');
+        const sub = card.querySelector('p.tiny.muted');
+        const btn = card.querySelector('#start-review-button');
+        if(title && rv.title) title.textContent = rv.title;
+        if(sub && rv.subtitle) sub.textContent = rv.subtitle;
+        if(btn && rv.retryButton) btn.textContent = rv.retryButton;
+      }
+    }
   }
 
   function normalizeCharacterData(data){
