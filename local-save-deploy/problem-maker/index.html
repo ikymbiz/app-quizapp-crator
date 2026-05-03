@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>MathBattle ローカル問題作成ツール</title>
+  <link rel="stylesheet" href="css/tool.css">
+</head>
+<body>
+  <header class="topbar"><b>🧩 MathBattle 問題作成ツール</b><span id="runtime-chip" class="chip">確認中</span></header>
+  <main class="shell">
+    <section id="locked-view" class="card stack">
+      <h1>ローカル専用ツール</h1>
+      <p>この問題作成ツールは、GitHub Pages 本番ページでは使いません。スマホ端末のローカル環境でのみ利用します。</p>
+      <div id="lock-reason" class="notice danger"></div>
+    </section>
+
+    <section id="auth-view" class="card stack hidden">
+      <h1>Googleログイン</h1>
+      <p class="muted">許可されたGoogleアカウントでログインした場合だけ、問題作成ツールを表示します。</p>
+      <div id="auth-status" class="notice"></div>
+      <div id="google-button"></div>
+    </section>
+
+    <section id="tool-view" class="stack hidden">
+      <div class="card stack">
+        <h1>問題パッケージ</h1>
+        <p class="muted">汎用形式 <code>learning.problemPackage</code> v1 を読み書きします。</p>
+        <div class="grid-2">
+          <label class="btn" for="import-package">読み込み</label>
+          <input id="import-package" type="file" accept=".json,.learning-pack.json,application/json" hidden>
+          <button id="download-package" class="btn">.learning-pack.json 保存</button>
+          <button id="download-mathunits" class="btn primary">mathUnits.json 保存</button>
+        </div>
+      </div>
+
+      <div class="card stack">
+        <h2>Geminiで生成</h2>
+        <label>Gemini API Key</label>
+        <input id="gemini-api-key" type="password" placeholder="AIza...">
+        <label>Model</label>
+        <input id="gemini-model" type="text" value="gemini-2.5-flash">
+        <div class="grid-2">
+          <div><label>問題数</label><input id="gemini-count" type="number" value="10" min="1" max="100"></div>
+          <div><label>回答形式</label><select id="gemini-answer-type"><option value="numeric">数値入力</option><option value="choice" selected>四択</option><option value="text">文字入力</option></select></div>
+        </div>
+        <label>生成プロンプト</label>
+        <textarea id="gemini-prompt" rows="7"></textarea>
+        <div class="grid-2">
+          <button id="prompt-template" class="btn">プロンプト例</button>
+          <button id="gemini-generate" class="btn primary">Geminiで生成</button>
+        </div>
+      </div>
+
+      <div class="card stack">
+        <h2>JSON編集</h2>
+        <textarea id="package-json" rows="16" class="code" placeholder="learning.problemPackage JSON"></textarea>
+        <div class="grid-2">
+          <button id="validate-json" class="btn">検証</button>
+          <button id="apply-json" class="btn primary">反映</button>
+        </div>
+        <div id="validation-result" class="notice"></div>
+      </div>
+
+      <div class="card stack">
+        <h2>プレビュー</h2>
+        <div id="preview"></div>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="config/local-tool.config.js"></script>
+  <script src="js/localProblemTool.js"></script>
+</body>
+</html>
